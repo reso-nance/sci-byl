@@ -24,15 +24,16 @@ import leds
 isPlaying = False
 
 
-chunkSize = 4096
+chunkSize = 4096 # lower values yields more reactive LED animation but may introduce crackling/popping in the audio 
 
 def playThread(filename) :
+    """will play the wavfile through pyaudio while animating the LEDs accordingly to mimic a talking light"""
     global isPlaying
-    isPlaying = True
+    isPlaying = True # will be used to stop if set to false externally
     wavfile = wave.open(filename, 'rb')
     p = pyaudio.PyAudio()
     print("playing file", filename, " : format",p.get_format_from_width(wavfile.getsampwidth()), "rate",  wavfile.getframerate())
-    stream = p.open(format = p.get_format_from_width(wavfile.getsampwidth()),
+    stream = p.open(format = p.get_format_from_width(wavfile.getsampwidth()), # get properties from source wav
                     channels = wavfile.getnchannels(),
                     rate = wavfile.getframerate(),
                     output = True)
@@ -51,7 +52,7 @@ def playThread(filename) :
     stream.close()
     p.terminate()
     isPlaying = False
-    leds.startBreathing()
+    leds.startBreathing() # resume default breathing
 
 def play(filename):
     Thread(target=playThread, args=(filename,)).start()

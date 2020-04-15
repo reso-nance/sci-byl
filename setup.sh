@@ -45,6 +45,8 @@ sed -i -e 's/CONF_SWAPSIZE=1024/CONF_SWAPSIZE=100/g' /etc/dphys-swapfile||exit 2
 pip3 install Cython||exit 2
 pip3 install numpy ||exit 2
 pip3 install pyaudio ||exit 2
+pip3 install xml_cleaner ||exit 2
+pip3 install epub_conversion ||exit 2
 python3 -m spacy download fr_core_news_sm||exit 2
 
 echo "
@@ -62,26 +64,26 @@ echo "
 
 "
 
-echo"
+echo "
 --------- setting up the wifi country as FR---------"
 sudo raspi-config nonint do_wifi_country FR
 
 echo "
 --------------setting up script autolaunch:--------------
 "
-echo"
-su pi -c 'cd /home/pi/sci-byl && python3 main.py&'
+echo "
+su pi -c 'cd $thisScriptDir && python3 main.py&'
 ">>/etc/rc.local
 
-# echo "
-# ----------- setting up the access point ------------
-# "
-# chmod +x STAtoAP
-# sudo ./STAtoAP
+echo "
+----------- setting up the access point ------------
+"
+chmod +x STAtoAP
+sudo ./STAtoAP
 
-# echo "
+echo "
 
-# ----------------------------------------------------
-# ----------- DONE, rebooting in 3, 2, 1... ----------
-# ----------------------------------------------------"
-# sleep(3); sudo reboot
+----------------------------------------------------
+----------- DONE, rebooting in 3, 2, 1... ----------
+----------------------------------------------------"
+sleep(3); sudo reboot

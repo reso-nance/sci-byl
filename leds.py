@@ -45,7 +45,7 @@ def setup():
     GPIO.setmode(GPIO.BOARD)
     for pin in RGBpinsNumber :
         GPIO.setup(pin, GPIO.OUT)
-        RGBPins.append(GPIO.PWM(pin, 50))
+        RGBPins.append(GPIO.PWM(pin, 120)) # tried 50hz but some flickering was clearly visible
         RGBPins[-1].start(0)
     # GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(buttonPin, GPIO.IN) # no need for pullups/downs since the capacitive module has them on board
@@ -70,6 +70,7 @@ def breathe(intensityFreq, colorFreq, pause):
         for i in range(3) : RGBPins[i].ChangeDutyCycle(RGBvalues[i]) # write to LEDs
 
 def startBreathing(intensityFreq=.3, colorFreq=.05, pause=None) :
+    """will make the RGB led change color and intensity according to the frequencies given (in Hz) until isBreathing is set to False"""
     Thread(target=breathe, args=(intensityFreq, colorFreq, pause)).start()
 
 def getSineValue(timeStarted, frequency):
@@ -105,9 +106,11 @@ def setRGBthread(RGBvalues) :
     for i in range(3) : RGBPins[i].ChangeDutyCycle(0)
 
 def setRGB(RGBvalues):
+    """lights RGB led to fixed values until isLit is set to False"""
     Thread(target=setRGBthread, args=(RGBvalues,)).start()
 
 def setHSV(hue, saturation, value): 
+    """lights RGB led to fixed hue, saturation and value (0-1) until isLit is set to False"""
     global RGBPins
     RGBvalues = hsv2rgb(hue, saturation, value)
     for i in range(3): RGBPins[i].ChangeDutyCycle(RGBvalues[i])

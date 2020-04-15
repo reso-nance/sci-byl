@@ -42,6 +42,7 @@ if __name__ == '__main__':
     raise SystemExit("This file is not meant to be executed directly. It should be imported as a module.")
     
 def generateText(sentenceLength = 280):
+    """will output a sentence generated from a random model"""
     model = random.choice(availableCorpuses)
     print("selected model :", model["name"])
     for i in range(10):
@@ -50,10 +51,24 @@ def generateText(sentenceLength = 280):
             if textToSpeech : readTextToSpeech(text)
             print(text)
             return
+        else : sentenceLength -= 20 # shorter sentences are easier to generate
     print("unable to generate text 10 times in a row")
 
+def epub2txt(path, extension):
+    """ converts an epub to a .txt file using ebooklib, returns the new .txt path"""
+    outputPath = path.replace(extension, ".txt")
+    from epub_conversion.utils import open_book, convert_epub_to_lines
+    from xml_cleaner import to_raw_text
+    lines = convert_epub_to_lines(open_book(path))
+    for line in lines :
+        line = to_raw_text(line)[0] # we strip out markup
+        if len(line) > 15 and line[0] != "<" : # we only keep longer lines to avoid titles and pagination
+            line = " ".join(line) + "\n"
+            with open(outputPath, "a") as f : f.write(line)
+    return outputPath
 
 def buildModel(filename):
+    """ constructs a precomputed .json model from a text file"""
     if not os.path.isfile(filename) :
         print("file %s not found" % filename)
         return False
@@ -71,34 +86,27 @@ def loadModelFromJson(path):
     return {"model":model, "length":len(data)}
 
 def initialiseCorpuses():
+    """will search available text files, look for a corresponding json precomputed model and generate one if missing"""
     global availableCorpuses
     availableCorpuses = []
-    for path in glob.glob(corpusPath+"*.txt") :
+    for path in glob.glob(corpusPath+"*.txt")+glob.glob(corpusPath+"*.epub") :
         pathWithoutExt = os.path.splitext(path)[0]
-        filename, filenameWithoutExt = os.path.basename(path), os.path.splitext(os.path.basename(path))[0]
+        filename, extension, filenameWithoutExt = os.path.basename(path), os.path.splitext(os.path.basename(path))[1], os.path.splitext(os.path.basename(path))[0]
         if not os.path.isfile(pathWithoutExt+".json") :
-            print("new corpus %s found, computing model..." % filename)
+            print("  new corpus %s found, computing model..." % filename)
+            if extension.upper() == ".EPUB" and not os.path.isfile(pathWithoutExt+".txt"):
+                path = epub2txt(path, extension) # convert the .epub to .txt if it ain't already done
             if not buildModel(path) :
                 print("ERROR computing %s model" % filename)
                 break
         else : print("  using precomputed corpus %s" % filenameWithoutExt)
-        # ~ availableCorpuses.append({"name":filenameWithoutExt, "file":pathWithoutExt+".json", "model":None, "mix":1.})
         model = loadModelFromJson(pathWithoutExt+".json")
         availableCorpuses.append({"name":filenameWithoutExt,"model":model["model"],"length":model["length"], "mix":.5})
-        # ~ testSentence = availableCorpuses[-1]["model"].make_short_sentence(280)
-        # ~ if testSentence : print(testSentence)
     print("\n---corpuses initialised successfully---\n")
-    # ~ print(generateText())
     return
 
 def readTextToSpeech(text):
+    """uses pico2wav to produce a 16kHz wav which is converted to 44.1kHz by sox then played using audio.play()"""
     cmd = 'pico2wave --lang="fr-FR" -w tmp16kHz.wav "'+text+'" && sox tmp16kHz.wav -r 44100 tmp.wav' #pico2wave only generate 16kHz wavs which cannot be read by pyaudio
     subprocess.Popen(cmd, shell=True).wait()
     audio.play("./tmp.wav")
-
-
-def debugText(delay=4):
-    import time, random
-    while True :
-        time.sleep(delay)
-        generateText(random.randrange(200, 800))
