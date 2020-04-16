@@ -61,9 +61,9 @@ def epub2txt(path, extension):
     from xml_cleaner import to_raw_text
     lines = convert_epub_to_lines(open_book(path))
     for line in lines :
-        line = to_raw_text(line)[0] # we strip out markup
+        line = to_raw_text(line, keep_whitespace=True)[0] # we strip out markup
         if len(line) > 15 and line[0] != "<" : # we only keep longer lines to avoid titles and pagination
-            line = " ".join(line) + "\n"
+            line = "".join(line) + "\n"
             with open(outputPath, "a") as f : f.write(line)
     return outputPath
 
